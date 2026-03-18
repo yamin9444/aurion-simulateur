@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aurion Patrimoine — Simulateur Assurance-Vie & Épargne 2026</title>
+<meta name="description" content="Simulez votre assurance-vie et estimez votre capital et revenu à la retraite — Aurion Patrimoine.">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --ap:#02539d;--ap-l:rgba(2,83,157,0.09);--ap-b:rgba(2,83,157,0.28);
+  --black:#000;--white:#fff;
+  --bg:#f5f5f3;--bg2:#fff;--bg3:#f0f0ee;
+  --txt:#1a1a1a;--txt2:#555;--txt3:#888;
+  --bdr:rgba(0,0,0,0.09);--bdr2:rgba(0,0,0,0.15);
+  --r:10px;--rs:6px;
+  --green:#1D9E75;--amber:#BA7517;--red:#E24B4A;
+}
+html{scroll-behavior:smooth;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--txt);min-height:100vh;font-size:15px;line-height:1.5;}
+
+/* NAV */
+nav{background:var(--black);padding:14px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;flex-wrap:wrap;gap:10px;}
+.nav-logo{display:flex;align-items:center;gap:12px;text-decoration:none;}
+.nav-logo svg{width:36px;height:36px;flex-shrink:0;}
+.nav-name{color:#fff;font-size:15px;font-weight:600;letter-spacing:0.04em;}
+.nav-sub{color:rgba(255,255,255,0.3);font-size:9px;letter-spacing:0.25em;text-transform:uppercase;display:block;margin-top:1px;}
+.nav-tabs{display:flex;gap:4px;flex-wrap:wrap;}
+.nav-tab{padding:7px 14px;font-size:12px;color:rgba(255,255,255,0.5);border:0.5px solid rgba(255,255,255,0.12);border-radius:20px;cursor:pointer;transition:all 0.2s;background:transparent;font-family:inherit;}
+.nav-tab:hover{color:#fff;border-color:rgba(255,255,255,0.3);}
+.nav-tab.active{background:var(--ap);color:#fff;border-color:var(--ap);}
+
+/* HERO */
+.hero{background:var(--black);padding:44px 24px 36px;text-align:center;border-bottom:1px solid rgba(255,255,255,0.06);}
+.hero-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(2,83,157,0.25);border:0.5px solid rgba(2,83,157,0.5);color:#5aafff;font-size:11px;padding:4px 12px;border-radius:20px;margin-bottom:16px;}
+.hero h1{color:#fff;font-size:clamp(20px,5vw,34px);font-weight:600;margin-bottom:10px;line-height:1.2;}
+.hero p{color:rgba(255,255,255,0.4);font-size:14px;max-width:480px;margin:0 auto;}
+
+/* PAGES */
+.page{display:none;padding:24px 16px;max-width:940px;margin:0 auto;}
+.page.active{display:block;}
+
+/* CARD */
+.card{background:var(--bg2);border:0.5px solid var(--bdr);border-radius:var(--r);overflow:hidden;margin-bottom:16px;}
+.card-header{padding:14px 20px;border-bottom:0.5px solid var(--bdr);background:var(--bg3);}
+.card-header h2{font-size:13px;font-weight:600;}
+.card-header p{font-size:12px;color:var(--txt3);margin-top:2px;}
+.card-body{padding:20px;}
+.sec{font-size:9px;font-weight:600;letter-spacing:0.25em;text-transform:uppercase;color:var(--ap);border-left:2px solid var(--ap);padding-left:8px;margin-bottom:13px;}
+
+/* INPUTS */
+.fld{margin-bottom:16px;}
+.fr{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;}
+.fl{font-size:12px;color:var(--txt2);}
+.fv{font-size:13px;font-weight:700;color:var(--ap);}
+.fh{font-size:10px;color:var(--txt3);margin-top:3px;}
+input[type=range]{width:100%;height:4px;-webkit-appearance:none;appearance:none;background:rgba(2,83,157,0.15);border-radius:2px;outline:none;cursor:pointer;}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:17px;height:17px;border-radius:50%;background:var(--ap);box-shadow:0 0 0 3px rgba(2,83,157,0.2);transition:box-shadow 0.2s;}
+input[type=range]::-webkit-slider-thumb:hover{box-shadow:0 0 0 6px rgba(2,83,157,0.2);}
+select,input[type=number]{width:100%;padding:8px 11px;border:0.5px solid var(--bdr2);border-radius:var(--rs);background:#fff;color:var(--txt);font-size:13px;font-family:inherit;outline:none;}
+select{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23888' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 11px center;background-color:#fff;}
+select:focus,input[type=number]:focus{border-color:var(--ap);}
+input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;}
+
+/* GRIDS */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;}
+@media(max-width:620px){.g2,.g3{grid-template-columns:1fr 1fr;}}
+@media(max-width:400px){.g3{grid-template-columns:1fr 1fr;}}
+
+/* AV LAYOUT */
+.av-layout{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:8px;}
+@media(max-width:680px){.av-layout{grid-template-columns:1fr;}}
+
+/* PROFILE CARDS */
+.pcards{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px;}
+.pcard{border:1.5px solid var(--bdr2);border-radius:var(--rs);padding:12px 8px;cursor:pointer;text-align:center;transition:all 0.2s;background:#fff;}
+.pcard:hover{border-color:var(--ap);}
+.pcard.sp{border-color:#1D9E75;background:rgba(29,158,117,0.06);}
+.pcard.se{border-color:#02539d;background:rgba(2,83,157,0.06);}
+.pcard.sd{border-color:#BA7517;background:rgba(186,117,23,0.06);}
+.pcard-name{font-size:11px;font-weight:600;margin-bottom:2px;}
+.pcard-rate{font-size:20px;font-weight:700;margin-bottom:2px;}
+.pcard-desc{font-size:10px;color:var(--txt3);line-height:1.3;}
+
+/* HERO RESULT */
+.hres{background:#000;border-radius:var(--r);margin-bottom:14px;overflow:hidden;}
+.htop{display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid rgba(255,255,255,0.08);}
+.hb{padding:16px;text-align:center;}
+.hb:first-child{border-right:1px solid rgba(255,255,255,0.08);}
+.hlbl{color:rgba(255,255,255,0.38);font-size:9px;letter-spacing:0.18em;text-transform:uppercase;margin-bottom:6px;}
+.hval{font-size:clamp(16px,3.5vw,26px);font-weight:700;line-height:1;}
+.hsub{color:rgba(255,255,255,0.28);font-size:10px;margin-top:4px;}
+.hprof{padding:9px 14px;display:flex;align-items:center;justify-content:center;gap:6px;}
+.hpdot{width:7px;height:7px;border-radius:50%;}
+.hpname{font-size:11px;color:rgba(255,255,255,0.42);}
+
+/* STAT CARDS */
+.sc{background:var(--bg3);border:0.5px solid var(--bdr);border-radius:var(--rs);padding:12px;}
+.sc.ab{border-top:2px solid var(--ap);}
+.sc.gb{border-top:2px solid var(--green);}
+.sc.ob{border-top:2px solid var(--amber);}
+.slbl{font-size:9px;text-transform:uppercase;letter-spacing:0.12em;color:var(--txt3);margin-bottom:3px;}
+.sval{font-size:16px;font-weight:700;}
+.sval.b{color:var(--ap);}.sval.g{color:var(--green);}.sval.o{color:var(--amber);}
+.ssub{font-size:10px;color:var(--txt3);margin-top:1px;}
+
+/* BENCHMARK TABLE */
+.btable{width:100%;border-collapse:collapse;font-size:12px;}
+.btable th{padding:9px 12px;text-align:left;font-size:9px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--txt3);border-bottom:1px solid var(--bdr);background:var(--bg3);}
+.btable td{padding:10px 12px;border-bottom:0.5px solid var(--bdr);}
+.btable tr:last-child td{border-bottom:none;}
+.btable tr.selrow td{background:rgba(2,83,157,0.04);font-weight:600;}
+.bdot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:5px;vertical-align:middle;}
+
+/* ALERTS */
+.alert{padding:9px 12px;border-radius:var(--rs);font-size:11px;line-height:1.5;margin-bottom:12px;}
+.alert.info{background:#EBF4FF;border:0.5px solid #90C3F5;color:#0A3D6B;}
+.alert.warn{background:#FFF8E6;border:0.5px solid #F0C940;color:#7A5800;}
+.alert.success{background:#F0FDF4;border:0.5px solid #86EFAC;color:#14532D;}
+.alert.danger{background:#FEF2F2;border:0.5px solid #FCA5A5;color:#7F1D1D;}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:11px 20px;border:none;border-radius:var(--rs);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;transition:all 0.2s;text-decoration:none;}
+.btn-p{background:var(--ap);color:#fff;}.btn-p:hover{background:#0362b8;}
+.btn-full{width:100%;}
+.btn-out{background:transparent;color:var(--ap);border:1.5px solid var(--ap);}.btn-out:hover{background:var(--ap-l);}
+.btn-back{padding:10px 16px;font-size:13px;color:var(--txt2);background:var(--bg3);border:0.5px solid var(--bdr2);border-radius:var(--rs);cursor:pointer;font-family:inherit;}
+
+/* CTA BAND */
+.cta{background:#000;border-radius:var(--r);padding:18px 20px;display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-top:14px;}
+.cta-txt h3{color:#fff;font-size:14px;font-weight:600;margin-bottom:3px;}
+.cta-txt p{color:rgba(255,255,255,0.42);font-size:11px;line-height:1.5;}
+.cta a{padding:11px 20px;background:var(--ap);color:#fff;font-size:12px;font-weight:600;border:none;border-radius:var(--rs);cursor:pointer;text-decoration:none;white-space:nowrap;transition:background 0.2s;display:inline-flex;align-items:center;gap:6px;}
+.cta a:hover{background:#0362b8;}
+
+/* CHART */
+.chart-wrap{position:relative;width:100%;height:220px;}
+.chart-legend{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:8px;}
+.leg-item{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--txt2);}
+.leg-dot{width:10px;height:10px;border-radius:2px;flex-shrink:0;}
+
+/* EXPLAINER */
+.expl{background:var(--bg3);border:0.5px solid var(--bdr);border-radius:var(--rs);padding:14px;font-size:12px;color:var(--txt2);line-height:1.7;margin-bottom:14px;}
+
+/* DISCLAIMER */
+.disc{font-size:10px;color:var(--txt3);text-align:center;margin-top:10px;line-height:1.6;padding:0 8px;}
+
+/* ÉPARGNE STEPS */
+.steps{display:flex;align-items:center;margin-bottom:7px;}
+.sdot{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;border:1.5px solid var(--bdr2);color:var(--txt3);background:#fff;flex-shrink:0;transition:all 0.2s;}
+.sdot.act{background:var(--ap);color:#fff;border-color:var(--ap);}
+.sdot.dn{background:var(--green);color:#fff;border-color:var(--green);}
+.sline{flex:1;height:1px;background:var(--bdr);}
+.slbls{display:flex;justify-content:space-between;margin-top:5px;margin-bottom:20px;}
+.slbl{font-size:9px;color:var(--txt3);text-transform:uppercase;letter-spacing:0.1em;text-align:center;flex:1;}
+.slbl.act{color:var(--ap);font-weight:600;}
+
+/* CHARGE INPUTS */
+.cg{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:14px;}
+@media(max-width:400px){.cg{grid-template-columns:1fr;}}
+.ci{background:var(--bg3);border:0.5px solid var(--bdr);border-radius:var(--rs);padding:9px 11px;}
+.ci label{font-size:11px;color:var(--txt2);display:block;margin-bottom:4px;}
+.ci input[type=number]{background:#fff;font-size:12px;}
+.btn-row{display:flex;gap:9px;margin-top:8px;}
+
+/* RING */
+.rw{position:relative;width:96px;height:96px;margin:0 auto 14px;}
+.rw svg{transform:rotate(-90deg);}
+.rc{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+.rpct{font-size:19px;font-weight:700;}
+.rlbl{font-size:8px;color:var(--txt3);text-transform:uppercase;letter-spacing:0.1em;}
+
+/* BUDGET BAR */
+.btrack{height:9px;background:var(--bg3);border-radius:5px;overflow:hidden;display:flex;margin:6px 0;}
+.bseg{height:100%;transition:width 0.4s ease;}
+
+/* FOOTER */
+footer{background:#000;color:rgba(255,255,255,0.3);text-align:center;padding:22px 20px;font-size:11px;margin-top:32px;line-height:1.8;}
+footer strong{color:rgba(255,255,255,0.6);}
+footer a{color:rgba(255,255,255,0.4);text-decoration:none;}
+footer a:hover{color:rgba(255,255,255,0.7);}
+</style>
+</head>
+<body>
+
+<nav>
+  <a class="nav-logo" href="#">
+    <svg viewBox="0 0 80 80" fill="none">
+      <rect width="80" height="80" fill="#000"/>
+      <text x="12" y="52" font-family="Georgia,serif" font-size="40" fill="white">A</text>
+      <line x1="46" y1="16" x2="36" y2="64" stroke="white" stroke-width="1.8"/>
+      <text x="34" y="64" font-family="Georgia,serif" font-size="36" fill="white">P</text>
+    </svg>
+    <div>
+      <div class="nav-name">Aurion Patrimoine</div>
+      <span class="nav-sub">Conseil en gestion de patrimoine</span>
+    </div>
+  </a>
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="showPage('av',this)">Simulateur Assurance-Vie</button>
+    <button class="nav-tab" onclick="showPage('ep',this)">Capacité d'épargne</button>
+  </div>
+</nav>
+
+<div class="hero">
+  <div class="hero-badge">
+    <svg width="6" height="6" viewBox="0 0 6 6"><circle cx="3" cy="3" r="3" fill="#5aafff"/></svg>
+    Outils gratuits — Simulation indicative 2026
+  </div>
+  <h1>Estimez votre avenir financier</h1>
+  <p>Simulez votre assurance-vie, estimez votre capital et votre revenu à la retraite.</p>
+</div>
+
+<!-- ══════════════════════════════════════════
+     PAGE 1 : SIMULATEUR ASSURANCE-VIE
+══════════════════════════════════════════ -->
+<div class="page active" id="page-av">
+<div class="av-layout">
+
+  <!-- INPUTS -->
+  <div>
+    <div class="card">
+      <div class="card-header"><h2>Votre situation</h2><p>Renseignez vos informations pour personnaliser la simulation</p></div>
+      <div class="card-body">
+
+        <div class="sec">Votre épargne</div>
+        <div class="fld">
+          <div class="fr"><span class="fl">Versement initial</span><span class="fv" id="lv-i">1 000 €</span></div>
+          <input type="range" id="v-i" min="0" max="100000" step="500" value="1000" oninput="upd()">
+          <div class="fh">Capital de départ placé dès aujourd'hui</div>
+        </div>
+        <div class="fld">
+          <div class="fr"><span class="fl">Épargne mensuelle</span><span class="fv" id="lv-m">200 €</span></div>
+          <input type="range" id="v-m" min="0" max="5000" step="50" value="200" oninput="upd()">
+        </div>
+
+        <div class="sec" style="margin-top:6px;">Votre horizon</div>
+        <div class="g2" style="margin-bottom:14px;">
+          <div class="fld" style="margin-bottom:0;">
+            <div class="fr"><span class="fl">Âge actuel</span><span class="fv" id="lv-a">35 ans</span></div>
+            <input type="range" id="v-a" min="18" max="65" step="1" value="35" oninput="upd()">
+          </div>
+          <div class="fld" style="margin-bottom:0;">
+            <div class="fr"><span class="fl">Départ à la retraite</span><span class="fv" id="lv-r">65 ans</span></div>
+            <input type="range" id="v-r" min="50" max="75" step="1" value="65" oninput="upd()">
+          </div>
+        </div>
+        <div class="fld">
+          <div class="fr"><span class="fl">Durée de rachat mensuel</span><span class="fv" id="lv-rc">20 ans</span></div>
+          <input type="range" id="v-rc" min="5" max="35" step="1" value="20" oninput="upd()">
+          <div class="fh">Pendant combien d'années percevez-vous un revenu mensuel ?</div>
+        </div>
+
+        <div class="sec" style="margin-top:6px;">Profil de gestion</div>
+        <div class="pcards" id="pcards">
+          <div class="pcard sp" onclick="setP('p',this)">
+            <div class="pcard-name">Prudent</div>
+            <div class="pcard-rate" style="color:#1D9E75">4 %</div>
+            <div class="pcard-desc">Fonds euros sécurisé</div>
+          </div>
+          <div class="pcard" onclick="setP('e',this)">
+            <div class="pcard-name">Équilibré</div>
+            <div class="pcard-rate" style="color:#02539d">6,5 %</div>
+            <div class="pcard-desc">Mix fonds euros + UC</div>
+          </div>
+          <div class="pcard" onclick="setP('d',this)">
+            <div class="pcard-name">Dynamique</div>
+            <div class="pcard-rate" style="color:#BA7517">9 %</div>
+            <div class="pcard-desc">Majorité UC, long terme</div>
+          </div>
+        </div>
+
+        <div class="alert info">Horizon de capitalisation : <strong id="hor-txt">30 ans</strong> · Retraite à <strong id="ret-txt">65 ans</strong></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RESULTS -->
+  <div>
+    <div class="hres">
+      <div class="htop">
+        <div class="hb">
+          <div class="hlbl">Capital à la retraite</div>
+          <div class="hval" id="r-cap" style="color:#5aafff">—</div>
+          <div class="hsub" id="r-cap-s">à 65 ans</div>
+        </div>
+        <div class="hb">
+          <div class="hlbl">Revenu mensuel</div>
+          <div class="hval" id="r-rev" style="color:#1D9E75">—</div>
+          <div class="hsub" id="r-rev-s">pendant 20 ans</div>
+        </div>
+      </div>
+      <div class="hprof">
+        <div class="hpdot" id="r-dot" style="background:#1D9E75"></div>
+        <div class="hpname" id="r-pname">Profil Prudent · 4 %/an</div>
+      </div>
+    </div>
+
+    <div class="g3" style="margin-bottom:14px;">
+      <div class="sc ab"><div class="slbl">Total versé</div><div class="sval b" id="r-v">—</div><div class="ssub">cumulés</div></div>
+      <div class="sc gb"><div class="slbl">Plus-value</div><div class="sval g" id="r-pv">—</div><div class="ssub">intérêts</div></div>
+      <div class="sc ob"><div class="slbl">Revenu annuel</div><div class="sval o" id="r-an">—</div><div class="ssub" id="r-an-s">sur 20 ans</div></div>
+    </div>
+
+    <div class="card" style="margin-bottom:14px;">
+      <div class="card-header"><h2>Projection du capital</h2></div>
+      <div class="card-body" style="padding-bottom:12px;">
+        <div class="chart-legend">
+          <div class="leg-item"><span class="leg-dot" id="leg1" style="background:#02539d"></span>Capital accumulé</div>
+          <div class="leg-item"><span class="leg-dot" style="background:#ddd"></span>Versements cumulés</div>
+        </div>
+        <div class="chart-wrap"><canvas id="avchart"></canvas></div>
+      </div>
+    </div>
+
+    <div class="cta">
+      <div class="cta-txt">
+        <h3>Passez à l'action</h3>
+        <p>Nos conseillers analysent votre situation et construisent une stratégie sur mesure.</p>
+      </div>
+      <a href="https://calendly.com/yamin-benhenia/rendez-vous-avec-yamin" target="_blank">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 012 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2V6a2 2 0 012-2z" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg>
+        Prendre rendez-vous
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- BENCHMARK -->
+<div class="card">
+  <div class="card-header"><h2>Benchmarks d'allocation — comparatif des 3 profils</h2><p>Simulation basée sur les mêmes paramètres, à titre indicatif</p></div>
+  <div class="card-body" style="padding:0;overflow-x:auto;">
+    <table class="btable">
+      <thead><tr><th>Profil</th><th>Taux net</th><th>Capital à la retraite</th><th>Revenu mensuel</th><th>Revenu annuel</th></tr></thead>
+      <tbody id="bench"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- EXPLAINER -->
+<div class="card">
+  <div class="card-header"><h2>Bien comprendre cette simulation</h2></div>
+  <div class="card-body">
+    <div class="expl" id="expl"></div>
+  </div>
+</div>
+<p class="disc">Simulation indicative · Aurion Patrimoine · Rendements non garantis · Les performances passées ne présagent pas des résultats futurs · Ne constitue pas un conseil en investissement au sens MIF 2 · 2026</p>
+</div>
+
+<!-- ══════════════════════════════════════════
+     PAGE 2 : CAPACITÉ D'ÉPARGNE
+══════════════════════════════════════════ -->
+<div class="page" id="page-ep">
+<div style="max-width:680px;margin:0 auto;padding-top:8px;">
+
+  <div class="steps">
+    <div class="sdot act" id="d1">1</div><div class="sline"></div>
+    <div class="sdot" id="d2">2</div><div class="sline"></div>
+    <div class="sdot" id="d3">3</div><div class="sline"></div>
+    <div class="sdot" id="d4">✓</div>
+  </div>
+  <div class="slbls">
+    <div class="slbl act" id="l1">Revenus</div>
+    <div class="slbl" id="l2">Charges fixes</div>
+    <div class="slbl" id="l3">Vie courante</div>
+    <div class="slbl" id="l4">Résultats</div>
+  </div>
+
+  <!-- STEP 1 -->
+  <div id="s1">
+    <div class="card">
+      <div class="card-header"><h2>Vos revenus mensuels nets</h2><p>Avant toute épargne</p></div>
+      <div class="card-body">
+        <div class="fld">
+          <div class="fr"><span class="fl">Salaire net mensuel</span><span class="fv" id="e-ls">3 000 €</span></div>
+          <input type="range" id="e-s" min="1000" max="20000" step="100" value="3000" oninput="eL('e-s','e-ls')">
+        </div>
+        <div class="fld">
+          <div class="fr"><span class="fl">Revenus complémentaires</span><span class="fv" id="e-lc">0 €</span></div>
+          <input type="range" id="e-c" min="0" max="5000" step="100" value="0" oninput="eL('e-c','e-lc')">
+          <div class="fh">Loyers, dividendes, freelance…</div>
+        </div>
+        <div class="fld">
+          <label class="fl" style="display:block;margin-bottom:6px;">Situation</label>
+          <select id="e-sit">
+            <option value="1">Célibataire / seul(e)</option>
+            <option value="2">En couple (2 revenus)</option>
+            <option value="1.5">En couple (1 revenu)</option>
+          </select>
+        </div>
+        <div class="alert info">Revenu total estimé : <strong id="e-tr">3 000 €</strong>/mois</div>
+        <button class="btn btn-p btn-full" onclick="eStep(2)">Continuer →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 2 -->
+  <div id="s2" style="display:none;">
+    <div class="card">
+      <div class="card-header"><h2>Vos charges fixes mensuelles</h2><p>Ce que vous payez quoi qu'il arrive</p></div>
+      <div class="card-body">
+        <div class="cg">
+          <div class="ci"><label>Loyer / crédit immo</label><input type="number" id="f1" value="900" min="0"></div>
+          <div class="ci"><label>Crédits consommation</label><input type="number" id="f2" value="0" min="0"></div>
+          <div class="ci"><label>Mutuelle / assurances</label><input type="number" id="f3" value="80" min="0"></div>
+          <div class="ci"><label>Abonnements</label><input type="number" id="f4" value="60" min="0"></div>
+          <div class="ci"><label>Transports</label><input type="number" id="f5" value="150" min="0"></div>
+          <div class="ci"><label>Impôts mensualisés</label><input type="number" id="f6" value="100" min="0"></div>
+        </div>
+        <div class="alert info">Total charges fixes : <strong id="e-tf">1 290 €</strong>/mois</div>
+        <div class="btn-row">
+          <button class="btn-back" onclick="eStep(1)">← Retour</button>
+          <button class="btn btn-p" style="flex:1;" onclick="eStep(3)">Continuer →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 3 -->
+  <div id="s3" style="display:none;">
+    <div class="card">
+      <div class="card-header"><h2>Vos dépenses de vie courante</h2><p>Soyez honnête, c'est pour vous</p></div>
+      <div class="card-body">
+        <div class="cg">
+          <div class="ci"><label>Alimentation / courses</label><input type="number" id="v1" value="400" min="0"></div>
+          <div class="ci"><label>Restaurants / sorties</label><input type="number" id="v2" value="150" min="0"></div>
+          <div class="ci"><label>Vêtements / shopping</label><input type="number" id="v3" value="100" min="0"></div>
+          <div class="ci"><label>Loisirs / sport</label><input type="number" id="v4" value="100" min="0"></div>
+          <div class="ci"><label>Vacances (mensualité)</label><input type="number" id="v5" value="100" min="0"></div>
+          <div class="ci"><label>Divers / imprévus</label><input type="number" id="v6" value="100" min="0"></div>
+        </div>
+        <div class="alert info">Total vie courante : <strong id="e-tv">950 €</strong>/mois</div>
+        <div class="btn-row">
+          <button class="btn-back" onclick="eStep(2)">← Retour</button>
+          <button class="btn btn-p" style="flex:1;" onclick="eCalc()">Voir mes résultats →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 4 : RÉSULTATS -->
+  <div id="s4" style="display:none;">
+    <div class="rw">
+      <svg width="96" height="96" viewBox="0 0 96 96">
+        <circle cx="48" cy="48" r="38" fill="none" stroke="#e8e8e5" stroke-width="8"/>
+        <circle id="ering" cx="48" cy="48" r="38" fill="none" stroke="#02539d" stroke-width="8" stroke-linecap="round" stroke-dasharray="239" stroke-dashoffset="239"/>
+      </svg>
+      <div class="rc"><div class="rpct" id="erpct">0%</div><div class="rlbl">épargne</div></div>
+    </div>
+
+    <div style="background:#000;border-radius:var(--r);padding:18px;text-align:center;margin-bottom:14px;border-left:3px solid var(--ap);">
+      <div style="color:rgba(255,255,255,0.38);font-size:9px;letter-spacing:0.18em;text-transform:uppercase;margin-bottom:7px;">Capacité d'épargne mensuelle</div>
+      <div style="color:#fff;font-size:clamp(24px,5vw,34px);font-weight:700;line-height:1;" id="ecap">—</div>
+      <div style="color:rgba(255,255,255,0.3);font-size:11px;margin-top:5px;" id="esub">sur un revenu de —</div>
+    </div>
+
+    <div class="g3" style="margin-bottom:14px;">
+      <div class="sc"><div class="slbl">Revenus</div><div class="sval" id="er-rev">—</div><div class="ssub">nets/mois</div></div>
+      <div class="sc"><div class="slbl">Dépenses totales</div><div class="sval" id="er-dep">—</div><div class="ssub">fixes+courantes</div></div>
+      <div class="sc ab"><div class="slbl">Reste à épargner</div><div class="sval b" id="er-ep">—</div><div class="ssub">par mois</div></div>
+    </div>
+
+    <div class="card" style="margin-bottom:14px;">
+      <div class="card-body">
+        <div style="display:flex;justify-content:space-between;font-size:11px;color:#888;margin-bottom:6px;"><span>Répartition de votre budget</span><span id="ebtot">—</span></div>
+        <div class="btrack">
+          <div class="bseg" id="esfix" style="background:#02539d;"></div>
+          <div class="bseg" id="esvar" style="background:#5aafff;"></div>
+          <div class="bseg" id="esep" style="background:#1D9E75;"></div>
+        </div>
+        <div style="display:flex;gap:12px;margin-top:7px;flex-wrap:wrap;">
+          <div class="leg-item"><span class="leg-dot" style="background:#02539d"></span>Charges fixes <strong id="elf" style="margin-left:2px;font-size:10px;"></strong></div>
+          <div class="leg-item"><span class="leg-dot" style="background:#5aafff"></span>Vie courante <strong id="elv" style="margin-left:2px;font-size:10px;"></strong></div>
+          <div class="leg-item"><span class="leg-dot" style="background:#1D9E75"></span>Épargne <strong id="ele" style="margin-left:2px;font-size:10px;"></strong></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="eadv"></div>
+
+    <div class="card" style="margin-bottom:14px;">
+      <div class="card-header"><h2>Si vous investissez ce montant chaque mois</h2></div>
+      <div class="card-body"><div class="g3" id="eproj"></div></div>
+    </div>
+
+    <div class="cta">
+      <div class="cta-txt">
+        <h3>Optimiser votre épargne</h3>
+        <p>Nos conseillers vous aident à faire travailler intelligemment votre capacité d'épargne.</p>
+      </div>
+      <a href="https://calendly.com/yamin-benhenia/rendez-vous-avec-yamin" target="_blank">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 012 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2V6a2 2 0 012-2z" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg>
+        Prendre rendez-vous
+      </a>
+    </div>
+    <button class="btn btn-out btn-full" style="margin-top:12px;" onclick="eStep(1)">← Recommencer</button>
+    <p class="disc">Simulation indicative · Aurion Patrimoine · contact@aurionpatrimoine.fr · 2026</p>
+  </div>
+
+</div>
+</div>
+
+<footer>
+  <strong>Aurion Patrimoine</strong> — Conseil en gestion de patrimoine indépendant<br>
+  Simulation indicative · Ne constitue pas un conseil en investissement au sens MIF 2<br>
+  Les performances passées ne garantissent pas les résultats futurs · 2026<br>
+  <a href="mailto:contact@aurionpatrimoine.fr">contact@aurionpatrimoine.fr</a>
+</footer>
+
+<script>
+/* ═══════════════════════════════
+   UTILS
+═══════════════════════════════ */
+const fmt  = n => Math.round(n).toLocaleString('fr-FR')+' €';
+const fmtK = n => { const v=Math.round(n); return v>=1000?Math.round(v/1000)+'k€':v+'€'; };
+const pct  = (a,b) => b>0?Math.round(a/b*100):0;
+
+/* ═══════════════════════════════
+   PROFILS — taux corrects
+═══════════════════════════════ */
+const PR = {
+  p:{ label:'Prudent',   taux:0.04,   color:'#1D9E75', sel:'sp' },
+  e:{ label:'Équilibré', taux:0.065,  color:'#02539d', sel:'se' },
+  d:{ label:'Dynamique', taux:0.09,   color:'#BA7517', sel:'sd' },
+};
+let prof='p', chart;
+
+/* ═══════════════════════════════
+   NAV
+═══════════════════════════════ */
+function showPage(id, el) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  el.classList.add('active');
+}
+
+/* ═══════════════════════════════
+   AV SIMULATOR
+═══════════════════════════════ */
+function setP(k, el) {
+  prof=k;
+  document.querySelectorAll('#pcards .pcard').forEach(c=>c.classList.remove('sp','se','sd'));
+  el.classList.add(PR[k].sel);
+  upd();
+}
+
+function calcCap(init, mens, hor, t) {
+  const r=t/12, n=hor*12;
+  const ci = init*Math.pow(1+r,n);
+  const cm = mens>0 ? mens*((Math.pow(1+r,n)-1)/r)*(1+r) : 0;
+  return Math.round(ci+cm);
+}
+function calcRev(cap, dur, t) {
+  const r=t/12, n=dur*12;
+  if(r===0) return Math.round(cap/n);
+  return Math.round(cap*r/(1-Math.pow(1+r,-n)));
+}
+
+function upd() {
+  const ini = +document.getElementById('v-i').value;
+  const men = +document.getElementById('v-m').value;
+  const age = +document.getElementById('v-a').value;
+  const ret = Math.max(+document.getElementById('v-r').value, age+1);
+  const rac = +document.getElementById('v-rc').value;
+  const hor = ret-age;
+  const t   = PR[prof].taux;
+  const col = PR[prof].color;
+
+  document.getElementById('lv-i').textContent   = fmt(ini);
+  document.getElementById('lv-m').textContent   = fmt(men);
+  document.getElementById('lv-a').textContent   = age+' ans';
+  document.getElementById('lv-r').textContent   = ret+' ans';
+  document.getElementById('lv-rc').textContent  = rac+' ans';
+  document.getElementById('hor-txt').textContent = hor+' ans';
+  document.getElementById('ret-txt').textContent = ret+' ans';
+
+  const cap   = calcCap(ini, men, hor, t);
+  const revM  = calcRev(cap, rac, t);
+  const verse = Math.round(ini + men*12*hor);
+  const pv    = Math.max(0, cap-verse);
+
+  document.getElementById('r-cap').textContent    = fmt(cap);
+  document.getElementById('r-cap-s').textContent  = 'à '+ret+' ans';
+  document.getElementById('r-rev').textContent    = fmt(revM);
+  document.getElementById('r-rev-s').textContent  = 'pendant '+rac+' ans';
+  document.getElementById('r-dot').style.background = col;
+  document.getElementById('r-pname').textContent  = 'Profil '+PR[prof].label+' · '+(t*100).toFixed(1)+' %/an · Taux net utilisé';
+  document.getElementById('r-v').textContent      = fmt(verse);
+  document.getElementById('r-pv').textContent     = fmt(pv);
+  document.getElementById('r-an').textContent     = fmt(revM*12);
+  document.getElementById('r-an-s').textContent   = 'sur '+rac+' ans';
+  document.getElementById('leg1').style.background = col;
+
+  // Chart
+  const step=Math.max(1,Math.floor(hor/14));
+  const lb=[],dC=[],dV=[];
+  for(let y=0;y<=hor;y+=step){
+    lb.push(y===0?'Auj.':(age+y)+' ans');
+    dC.push(calcCap(ini,men,y,t));
+    dV.push(Math.round(ini+men*12*y));
+  }
+  if(lb[lb.length-1]!==ret+' ans'){lb.push(ret+' ans');dC.push(cap);dV.push(verse);}
+
+  if(chart){
+    chart.data.labels=lb;
+    chart.data.datasets[0].data=dC;
+    chart.data.datasets[0].borderColor=col;
+    chart.data.datasets[0].backgroundColor=col+'22';
+    chart.data.datasets[1].data=dV;
+    chart.update('none');
+  } else {
+    chart=new Chart(document.getElementById('avchart'),{
+      type:'line',
+      data:{labels:lb,datasets:[
+        {label:'Capital',data:dC,borderColor:col,backgroundColor:col+'22',borderWidth:2.5,fill:true,tension:0.4,pointRadius:0,pointHoverRadius:4},
+        {label:'Versements',data:dV,borderColor:'#ccc',backgroundColor:'transparent',borderWidth:1.5,borderDash:[4,3],fill:false,tension:0,pointRadius:0,pointHoverRadius:3}
+      ]},
+      options:{
+        responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{display:false},tooltip:{backgroundColor:'#000',bodyColor:'#5aafff',borderColor:'rgba(2,83,157,0.3)',borderWidth:1,padding:9,callbacks:{label:ctx=>ctx.dataset.label+' : '+Math.round(ctx.parsed.y).toLocaleString('fr-FR')+' €'}}},
+        scales:{
+          x:{ticks:{color:'#aaa',font:{size:10},maxRotation:0,maxTicksLimit:8},grid:{color:'rgba(0,0,0,0.04)'}},
+          y:{ticks:{color:'#aaa',font:{size:10},callback:v=>fmtK(v)},grid:{color:'rgba(0,0,0,0.04)'}}
+        }
+      }
+    });
+  }
+
+  // Benchmark
+  document.getElementById('bench').innerHTML = Object.entries(PR).map(([k,p])=>{
+    const c=calcCap(ini,men,hor,p.taux);
+    const r=calcRev(c,rac,p.taux);
+    return `<tr class="${k===prof?'selrow':''}">
+      <td><span class="bdot" style="background:${p.color}"></span>${k===prof?'<strong>':''}Profil ${p.label}${k===prof?'</strong>':''} ${k===prof?'<span style="font-size:9px;background:#02539d;color:#fff;padding:1px 6px;border-radius:8px;margin-left:4px;font-weight:600;">Sélectionné</span>':''}</td>
+      <td style="color:${p.color};font-weight:600;">${(p.taux*100).toFixed(1)} %/an</td>
+      <td style="font-weight:${k===prof?700:400}">${fmt(c)}</td>
+      <td style="color:${k===prof?'#1D9E75':''};font-weight:${k===prof?700:400}">${fmt(r)}/mois</td>
+      <td>${fmt(r*12)}/an</td>
+    </tr>`;
+  }).join('');
+
+  // Explainer
+  document.getElementById('expl').innerHTML = `
+    Avec une épargne programmée de <strong>${fmt(men)}/mois</strong> pendant <strong>${hor} ans</strong> et un versement initial de <strong>${fmt(ini)}</strong>, votre capital projeté à la retraite est de <strong>${fmt(cap)}</strong> avec un taux net moyen de <strong>${(t*100).toFixed(1)} % (profil ${PR[prof].label})</strong>.<br><br>
+    Sur <strong>${rac} ans</strong> de rachats programmés, cela correspond à un revenu de <strong>${fmt(revM)}/mois</strong> (soit ${fmt(revM*12)}/an) jusqu'à épuisement du capital.<br><br>
+    <span style="font-size:11px;color:#888;">Ces projections sont calculées sur la base d'un rendement constant. Dans la réalité, les performances varient chaque année. Cette simulation ne tient pas compte de la fiscalité à la sortie ni des frais de gestion.</span>
+  `;
+}
+
+/* ═══════════════════════════════
+   CAPACITÉ D'ÉPARGNE
+═══════════════════════════════ */
+function eL(id, lbl) {
+  document.getElementById(lbl).textContent = fmt(+document.getElementById(id).value);
+  document.getElementById('e-tr').textContent = fmt(+document.getElementById('e-s').value + +document.getElementById('e-c').value);
+}
+function gF() { return ['f1','f2','f3','f4','f5','f6'].reduce((s,id)=>s+(+document.getElementById(id).value||0),0); }
+function gV() { return ['v1','v2','v3','v4','v5','v6'].reduce((s,id)=>s+(+document.getElementById(id).value||0),0); }
+
+function eStep(n) {
+  [1,2,3,4].forEach(i=>{
+    document.getElementById('s'+i).style.display = i===n?'block':'none';
+    const d=document.getElementById('d'+i), l=document.getElementById('l'+i);
+    d.classList.remove('act','dn');
+    if(l) l.classList.remove('act');
+    if(i===n){ d.classList.add('act'); if(l) l.classList.add('act'); }
+    else if(i<n) d.classList.add('dn');
+  });
+  if(n===2) document.getElementById('e-tf').textContent = fmt(gF());
+  if(n===3) document.getElementById('e-tv').textContent = fmt(gV());
+  window.scrollTo(0,0);
+}
+
+function eCalc() {
+  const rev  = +document.getElementById('e-s').value + +document.getElementById('e-c').value;
+  const fix  = gF(), varr=gV(), dep=fix+varr;
+  const cap  = Math.max(0, rev-dep);
+  const tEp  = pct(cap,rev), tFx=pct(fix,rev), tVr=pct(varr,rev);
+
+  document.getElementById('ecap').textContent  = fmt(cap);
+  document.getElementById('esub').textContent  = 'sur un revenu de '+fmt(rev);
+  document.getElementById('er-rev').textContent = fmt(rev);
+  document.getElementById('er-dep').textContent = fmt(dep);
+  document.getElementById('er-ep').textContent  = fmt(cap);
+  document.getElementById('ebtot').textContent  = fmt(rev);
+  document.getElementById('esfix').style.width  = Math.min(tFx,100)+'%';
+  document.getElementById('esvar').style.width  = Math.min(tVr,100)+'%';
+  document.getElementById('esep').style.width   = Math.min(tEp,100)+'%';
+  document.getElementById('elf').textContent    = tFx+'%';
+  document.getElementById('elv').textContent    = tVr+'%';
+  document.getElementById('ele').textContent    = tEp+'%';
+
+  const circ = 2*Math.PI*38;
+  const ring = document.getElementById('ering');
+  ring.style.strokeDashoffset = circ*(1-Math.min(tEp,100)/100);
+  ring.style.stroke = tEp>=20?'#1D9E75':tEp>=10?'#02539d':'#E24B4A';
+  document.getElementById('erpct').textContent = tEp+'%';
+  document.getElementById('erpct').style.color = tEp>=20?'#1D9E75':tEp>=10?'#02539d':'#E24B4A';
+
+  let adv='';
+  if(cap<=0) adv='<div class="alert danger"><strong>Budget déficitaire</strong> — Vos dépenses dépassent vos revenus. Un conseiller peut vous aider à rééquilibrer.</div>';
+  else if(tEp<10) adv='<div class="alert warn"><strong>Capacité limitée mais réelle</strong> — Même '+fmt(cap)+'/mois bien investis font une vraie différence sur 20 ans.</div>';
+  else if(tEp<20) adv='<div class="alert success"><strong>Bonne capacité d\'épargne</strong> — '+tEp+'% de taux d\'épargne, au-dessus de la moyenne française (8%). '+fmt(cap)+'/mois construisent un patrimoine solide.</div>';
+  else adv='<div class="alert success"><strong>Excellente capacité d\'épargne !</strong> — '+tEp+'% de taux d\'épargne. '+fmt(cap)+'/mois optimisés peuvent transformer votre situation en 10-15 ans.</div>';
+  document.getElementById('eadv').innerHTML = adv;
+
+  document.getElementById('eproj').innerHTML = [5,10,20].map(h=>{
+    const r=0.065/12, n=h*12;
+    const c = cap>0 ? cap*((Math.pow(1+r,n)-1)/r) : 0;
+    return `<div class="sc ab"><div class="slbl">Dans ${h} ans</div><div class="sval b">${fmt(Math.round(c))}</div><div class="ssub">à 6,5 %/an</div></div>`;
+  }).join('');
+
+  eStep(4);
+}
+
+/* INIT */
+upd();
+</script>
+</body>
+</html>
